@@ -1,0 +1,5 @@
+torch
+torchvision
+torchsummary
+tensorboardX
+tqdm
