@@ -1,6 +1,6 @@
 # Spatially-Adaptive Normalization
 
-Reproduce the CVPR oral paper "Semantic Image Synthesis with Spatially-Adaptive Normalization" ([pdf](https://arxiv.org/pdf/1903.07291.pdf)) in PyTorch
+Reproduce the CVPR 2019 oral paper "Semantic Image Synthesis with Spatially-Adaptive Normalization" ([pdf](https://arxiv.org/pdf/1903.07291.pdf)) in PyTorch
 
 View demos on the authors' [project page](https://nvlabs.github.io/SPADE/).
 
@@ -67,3 +67,4 @@ python3 train.py --dataset COCO-Stuff --epochs 100 --epochs_decay 0 --gpu
 ## Interesting Findings
 
 * It fails with small batch sizes. I tried training on a single GPU with a batch size of 8. However, it collapsed in the first dozens of iterations and the output images were full of white color. Training with a batch size of 24 on 4 GPUs seems okay so far.
+* After adding the perceptual loos, my batch size shrinked to 16.

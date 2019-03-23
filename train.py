@@ -24,7 +24,7 @@ from tensorboardX import SummaryWriter
 from torchsummary import summary
 
 from data import COCOStuff
-from networks import Encoder, Generator, Discriminator, sample_latent
+from networks import Encoder, Generator, Discriminator, VGG, sample_latent
 
 # The synchronized batch normalization is from
 # https://github.com/vacancy/Synchronized-BatchNorm-PyTorch.git
@@ -107,10 +107,9 @@ if __name__ == '__main__':
         val_dset = COCOStuff(args.data, mode='val')
         val_data = data.DataLoader(val_dset, batch_size = args.num_samples, shuffle=False, drop_last=False)
         n_classes = COCOStuff.n_classes
-    for fixed_reals, fixed_annos in val_data:
-        fixed_reals, fixed_annos = fixed_reals.to(device), fixed_annos.to(device)
-        fixed_annos_onehot = onehot2d(fixed_annos, n_classes).type_as(fixed_reals)
-        break
+    fixed_reals, fixed_annos = next(iter(val_data))
+    fixed_reals, fixed_annos = fixed_reals.to(device), fixed_annos.to(device)
+    fixed_annos_onehot = onehot2d(fixed_annos, n_classes).type_as(fixed_reals)
     del val_dset
     del val_data
     vutils.save_image(fixed_reals, join(sample_path, '{:03d}_real.jpg'.format(0)), nrow=4, padding=0, normalize=True, range=(-1., 1.))
@@ -129,12 +128,15 @@ if __name__ == '__main__':
     D.to(device)
     D.apply(init_weights)
     # summary(D, (13, 256, 256), device=device)
+    vgg = VGG()
+    vgg.to(device)
     
     if args.multi_gpu:
         E = nn.DataParallel(E)
         G = nn.DataParallel(G)
         # G = convert_model(G)
         D = nn.DataParallel(D)
+        VGG = nn.DataParallel(VGG)
     
     # Optimizers
     G_opt = optim.Adam(itertools.chain(G.parameters(), E.parameters()), lr=args.lr_G, betas=(args.beta1, args.beta2))
@@ -170,8 +172,11 @@ if __name__ == '__main__':
             fakes = G(latents, annos_onehot).detach()
             d_real = D(reals, annos_onehot)
             d_fake = D(fakes, annos_onehot)
+            # Real/fake hinge loss
             df_loss = torch.nn.ReLU()(1.0 - d_real[-1]).mean() + torch.nn.ReLU()(1.0 + d_fake[-1]).mean()
+            # D loss
             d_loss = df_loss
+            # Update D
             D_opt.zero_grad()
             d_loss.backward()
             D_opt.step()
@@ -184,19 +189,29 @@ if __name__ == '__main__':
             latents = sample_latent(mu, logvar)
             fakes = G(latents, annos_onehot)
             d_fake = D(fakes, annos_onehot)
+            # Real/fake hinge loss
             gf_loss = -d_fake[-1].mean()
+            # Feature matching loss
             fm_loss = 0
             for d_f, d_r in zip(d_fake[:-1], d_real[:-1]):
                 fm_loss += l1_norm(d_f, d_r.detach())
+            # Perceptual loss
+            vgg_loss = 0
+            for w, f, r in zip(vgg.weights, vgg(fakes), vgg(reals)):
+                vgg_loss += w * l1_norm(f, r.detach())
+            # KL divergence loss
             kl_loss = 0.5 * torch.sum(torch.exp(logvar) + mu**2 - 1. - logvar)
-            g_loss = gf_loss + args.lambda_fm * fm_loss + args.lambda_kl * kl_loss
+            # G loss
+            g_loss = gf_loss + args.lambda_fm * (fm_loss + vgg_loss) + args.lambda_kl * kl_loss
+            # Update G
             G_opt.zero_grad()
             g_loss.backward()
             G_opt.step()
             
             if (it+1) % args.log_iters == 0:
-                print('iter {:d} epoch {:d} d_loss {:.4f} g_loss {:.4f} gf {:.4f} fm {:.4f} kl {:.4f}'.format(
-                    it, ep, d_loss.item(), g_loss.item(), gf_loss.item(), fm_loss.item(), kl_loss.item()
+                print('iter {:d} epoch {:d} d_loss {:.4f} g_loss {:.4f} gf {:.4f} fm {:.4f} vgg_loss {:.4f} kl {:.4f}'.format(
+                    it, ep, d_loss.item(), g_loss.item(), gf_loss.item(), fm_loss.item(),
+                    vgg_loss.item() if type(vgg_loss) is torch.Tensor else vgg_loss, kl_loss.item()
                 ))
                 add_scalar_dict(writer, {
                     'd_loss': d_loss.item(),
@@ -206,6 +221,7 @@ if __name__ == '__main__':
                     'g_loss': g_loss.item(),
                     'gf_loss': gf_loss.item(),
                     'fm_loss': fm_loss.item(),
+                    'vgg_loss': vgg_loss.item() if type(vgg_loss) is torch.Tensor else vgg_loss,
                     'kl_loss': kl_loss.item()
                 }, it, 'G')
                 add_scalar_dict(writer, {
