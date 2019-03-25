@@ -8,6 +8,10 @@ View demos on the authors' [project page](https://nvlabs.github.io/SPADE/).
 
 I just finished the coding and started training on the datasets mentioned in the paper. The results will be updated in the following days.
 
+Here are some training samples until epoch 4.
+
+![Samples](https://github.com/elvisyjlin/SpatiallyAdaptiveNormalization/blob/master/pics/samples.gif)
+
 
 ## SPADE
 
@@ -18,7 +22,7 @@ The network architectures are explained in Appendix A of the paper. The generato
 The losses are mostly follow pix2pixHD but with a little change:
 * Adversarial loss is hinge loss (SPADE) instead of least square loss (pix2pixHD)
 * Feature matching loss with k=1,2,3 (k-th layer of D) (lambda 10.0) (pix2pixHD)
-* (Optional) perceptual loss with the VGG net (lambda 10.0) (pix2pixHD)
+* Perceptual loss with the VGG net (lambda 10.0) (required in SPADE; optional in pix2pixHD)
 * PatchGAN discriminator (pix2pixHD)
 * KL divergence loss for encoder (lambda 0.05) (SPADE)
 
@@ -49,9 +53,10 @@ Prepare the data as follows
       ├── images
           ├── train2017 (118,000 images)
           └── val2017 (5,000 images)
-      └── annotations
+      ├── annotations
           ├── train2017 (118,000 annotations)
           └── val2017 (5,000 annotations)
+      └── labels.txt (annotation list)
 ```
 
 
@@ -67,4 +72,4 @@ python3 train.py --dataset COCO-Stuff --epochs 100 --epochs_decay 0 --gpu
 ## Interesting Findings
 
 * It fails with small batch sizes. I tried training on a single GPU with a batch size of 8. However, it collapsed in the first dozens of iterations and the output images were full of white color. Training with a batch size of 24 on 4 GPUs seems okay so far.
-* After adding the perceptual loos, my batch size shrinked to 16.
+* After adding the perceptual loos, my batch size shrinked to 16. Perceptual loss is the most essential one for an adaptive normalized generative adversarial network to learn from scratch.
