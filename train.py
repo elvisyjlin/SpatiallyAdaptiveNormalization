@@ -23,7 +23,6 @@ import torchvision.utils as vutils
 from tensorboardX import SummaryWriter
 from torchsummary import summary
 
-from data import COCOStuff
 from networks import Encoder, Generator, Discriminator, VGG, sample_latent
 
 # The synchronized batch normalization is from
@@ -64,7 +63,6 @@ def parse():
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--lambda_fm', type=float, default=10.0)
     parser.add_argument('--lambda_kl', type=float, default=0.05)
-    parser.add_argument('--fm_num_D', type=int, default=3)
     parser.add_argument('--epochs', type=int, default=100)
     parser.add_argument('--epochs_decay', type=int, default=100)
     parser.add_argument('--lr_G', type=float, default=0.0001)
@@ -102,11 +100,12 @@ if __name__ == '__main__':
     
     # Data
     if args.dataset == 'COCO-Stuff':
-        train_dset = COCOStuff(args.data, mode='train')
-        train_data = data.DataLoader(train_dset, batch_size = args.batch_size, shuffle=True, drop_last=True)
-        val_dset = COCOStuff(args.data, mode='val')
-        val_data = data.DataLoader(val_dset, batch_size = args.num_samples, shuffle=False, drop_last=False)
-        n_classes = COCOStuff.n_classes
+        from data import COCO_Stuff
+        train_dset = COCO_Stuff(args.data, mode='train')
+        val_dset = COCO_Stuff(args.data, mode='val')
+        n_classes = COCO_Stuff.n_classes
+    train_data = data.DataLoader(train_dset, batch_size = args.batch_size, shuffle=True, drop_last=True)
+    val_data = data.DataLoader(val_dset, batch_size = args.num_samples, shuffle=False, drop_last=False)
     fixed_reals, fixed_annos = next(iter(val_data))
     fixed_reals, fixed_annos = fixed_reals.to(device), fixed_annos.to(device)
     fixed_annos_onehot = onehot2d(fixed_annos, n_classes).type_as(fixed_reals)
