@@ -7,4 +7,4 @@
  * Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
  */
 
-const GuaGANHost = 'YOUR ADDRESS HERE';
+const GuaGANHost = 'http://linux1.csie.ntu.edu.tw:8080';
