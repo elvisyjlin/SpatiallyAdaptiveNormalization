@@ -4,7 +4,7 @@ Reproduce the CVPR 2019 oral paper "Semantic Image Synthesis with Spatially-Adap
 
 View demo videos on the authors' [project page](https://nvlabs.github.io/SPADE/).
 
-View an interactive demo on [my page](https://elvisyjlin.github.io/SpatiallyAdaptiveNormalization/demo).
+View an interactive demo on [my page](http://linux1.csie.ntu.edu.tw:8080/demo). The training on COCO-Stuff has not finished. It is currently at epoch 4 (96 epochs to complete).
 
 > SPADE from scratch
 
