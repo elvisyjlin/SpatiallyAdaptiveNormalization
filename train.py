@@ -24,15 +24,12 @@ from tensorboardX import SummaryWriter
 from torchsummary import summary
 
 from networks import Encoder, Generator, Discriminator, VGG, sample_latent
+from utils import onehot2d
 
 # The synchronized batch normalization is from
 # https://github.com/vacancy/Synchronized-BatchNorm-PyTorch.git
 # from sync_batchnorm import convert_model
 
-
-def onehot2d(x, n):
-    assert x.dim() == 4 and x.size(1) == 1
-    return torch.zeros_like(x).repeat(1, n, 1, 1).scatter_(1, x, 1)
 
 def set_lr(optimizer, lr):
     for param_group in optimizer.param_groups:

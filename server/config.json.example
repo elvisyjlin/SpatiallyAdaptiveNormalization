@@ -1,0 +1,8 @@
+{
+    "experiment_name": "YOUR EXPERIMENT NAME",
+    "load_epoch": null,
+    "data_root":
+    {
+        "cocostuff": "YOUR COCO-STUFF PATH"
+    }
+}

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<!--
+  Copyright (C) 2019 Elvis Yu-Jing Lin <elvisyjlin@gmail.com>
+
+  This work is licensed under the Creative Commons Attribution-NonCommercial
+  4.0 International License. To view a copy of this license, visit
+  http://creativecommons.org/licenses/by-nc/4.0/ or send a letter to
+  Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
+-->
+<html>
+<head>
+  <title>GuaGAN Demo</title>
+  <style>
+@import url('https://fonts.googleapis.com/css?family=M+PLUS+1p');
+
+body {
+  margin: 0;
+  padding: 1em 1em;
+  font-family: 'M PLUS 1p', sans-serif;
+}
+
+canvas {
+  margin: 1em;
+  border: 1px dotted black;
+}
+
+input[type=radio] {
+  margin-left: 10px;
+  margin-right: 6px;
+}
+
+ul {
+  display: table;
+  margin: 0 auto;
+}
+
+#title {
+  margin: 0 5%;
+}
+
+#palette {
+  margin: 2em 0;
+}
+
+#content > div {
+  display: inline-block;
+  position: relative;
+}
+
+#content > div > input {
+  position: absolute;
+  left: 2em;
+  bottom: -1em;
+}
+
+#content > div > button, #content > div > div {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -1em;
+  white-space: nowrap;
+}
+
+#content > div > div > label {
+  font-size: 9pt;
+}
+
+#content > div > p {
+  margin-bottom: 0;
+}
+
+#palette > div {
+  padding: 1em 0;
+}
+
+.sample {
+  width: 6em;
+  margin: 4px;
+  display: inline-block;
+}
+
+.sample > div {
+  width: 32px;
+  height: 32px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
+.sample > div:hover {
+  transform: scale(1.15);
+}
+
+.sample.disabled > div:hover {
+  transform: scale(1);
+}
+
+.sample.active > div {
+  border: 2px solid #606060;
+  transform: scale(1.15);
+}
+
+.hidden-sample {
+  background-color: blue;
+  width: 6em;
+  margin: 4px;
+  display: inline-block;
+}
+
+.color-label {
+  font-size: 10pt;
+  opacity: 0.75;
+  margin: 0.2em 0 0.2em 0;
+  overflow:hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.bold {
+  font-family: bold;
+}
+
+#generation-time {
+  font-size: 10pt;
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome and Opera */
+}
+
+.no-underline {
+  text-decoration: none;
+}
+
+#footer {
+  color: #677084;
+}
+
+#footer a {
+  color: #3069e5;
+  font-size: 16px;
+}
+  </style>
+</head>
+<body>
+  <div id="title" align="center">
+    <h1>GuaGAN Demo</h1>
+    <p>
+      This is a reproduced demo of Nvidia
+      <a href="https://blogs.nvidia.com/blog/2019/03/18/gaugan-photorealistic-landscapes-nvidia-research/" target="blank_">GuaGAN</a>,
+      which is a generative adversarial network with a
+      <span class="bold">SP</span>atially <span class="bold">A</span>daptive <span class="bold">DE</span>normalization,
+      shorten as <a href="https://nvlabs.github.io/SPADE/" target="blank_">SPADE</a>.
+      The neural network generates an image from the sematic image you draw.
+      The style of generated image is controlled by the style image.
+    </p>
+    <p>I implemented the neural network with PyTorch and the website
+      <a href="https://github.com/elvisyjlin/SpatiallyAdaptiveNormalization" target="blank_">here</a>.
+    </p>
+    <h5>Instructions: Drag the mouse to draw a line with the picked color. Double click to fill the color in an continuous area.</h5>
+  </div>
+  <div id="content" align="center">
+    <div>
+      <p>Style Image</p>
+      <canvas id="clipboard" width="256" height="256"></canvas>
+      <!-- <div>
+        <input type='file' accept="image/*" />
+      </div> -->
+    </div>
+    <div>
+      <p>Semantic Image</p>
+      <canvas id="sketchpad" width="256" height="256"></canvas>
+      <div>
+        <button id="random-btn">Random</button>
+      </div>
+    </div>
+    <div>
+      <p>Generated Image<span id="generation-time"></span></p>
+      <canvas id="screen" width="256" height="256"></canvas>
+      <div>
+        <button id="regenerate-btn">Re-generate</button>
+        <label>Dataset:</label>
+        <select>
+          <option value="0">COCO-Stuff</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <div id="palette" align="center">
+    <div>
+      Pen style:
+      <input type="radio" name="pen" value="thin" />Thin
+      <input type="radio" name="pen" value="normal" />Normal
+      <input type="radio" name="pen" value="thick" />Thick
+    </div>
+    <div id="picking-area">
+      <div class="row"></div>
+      <div class="row"></div>
+      <div class="row"></div>
+    </div>
+  </div>
+  <div id="footer" align="center">
+    <a class="no-underline" href="https://github.com/elvisyjlin/SpatiallyAdaptiveNormalization" target="blank_">GuaGAN demo</a>
+    is created by
+    <a class="no-underline" href="https://github.com/elvisyjlin" target="blank_">@elvisyjlin</a>
+    in March, 2019.
+  </div>
+  <script src="http://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+  <script src="config.js"></script>
+  <script src="main.js"></script>
+  <script type="text/javascript">
+    const lineWidthMap = {
+      'thin': 6,
+      'normal': 12,
+      'thick': 24
+    }
+    let mouse = {x: 0, y: 0};
+    let isDrawing = false;
+    let requestId = null;
+    const arguments = getUrlVars();
+    const debug = ('debug' in arguments && arguments.debug == '1');
+
+    $( document ).ready(($) => {
+      const sketchpad = new SketchPad('sketchpad', 'palette', sendRequest);
+      
+      $('input[name=pen][value=normal]').prop('checked', true);
+      
+      sketchpad.setPenWidth(lineWidthMap['normal']);
+      
+      requestRandomImages(sketchpad).then(() => {
+        sendRequest();
+      });
+      
+      $('#random-btn').on('click', (event) => {
+        requestRandomImages(sketchpad).then(() => {
+          sendRequest();
+        });
+      });
+    
+      $('#regenerate-btn').on('click', (event) => {
+        sendRequest();
+      });
+      
+      $('input[type=radio][name=pen]').each((index, element) => {
+        $(element).on('change', (event) => {
+          sketchpad.setPenWidth(lineWidthMap[$(element).val()]);
+        });
+      });
+      
+      $('input[type=file]').on('change', (event) => {
+        let input = $(event.target);
+        let reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target.result;
+          cropResizeDataURL(dataUrl, 256).then((dataUrl) => {
+            drawDataUrlOnCanvas(dataUrl, 'clipboard').then((canvasId) => {
+              sendRequest();
+              alert('Your image is cropped and resized into the size of 256x256.');
+            });
+          });
+        };
+        reader.readAsDataURL(input[0].files[0]);
+      });
+    });
+  </script>
+</body>
+</html>

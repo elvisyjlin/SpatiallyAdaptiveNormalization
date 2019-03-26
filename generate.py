@@ -20,15 +20,12 @@ import torch.utils.data as data
 import torchvision.utils as vutils
 
 from networks import Encoder, Generator, sample_latent
+from utils import onehot2d
 
 # The synchronized batch normalization is from
 # https://github.com/vacancy/Synchronized-BatchNorm-PyTorch.git
 # from sync_batchnorm import convert_model
 
-
-def onehot2d(x, n):
-    assert x.dim() == 4 and x.size(1) == 1
-    return torch.zeros_like(x).repeat(1, n, 1, 1).scatter_(1, x, 1)
 
 def parse():
     parser = argparse.ArgumentParser()

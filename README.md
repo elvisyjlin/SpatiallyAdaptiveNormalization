@@ -2,7 +2,9 @@
 
 Reproduce the CVPR 2019 oral paper "Semantic Image Synthesis with Spatially-Adaptive Normalization" ([pdf](https://arxiv.org/pdf/1903.07291.pdf)) in PyTorch
 
-View demos on the authors' [project page](https://nvlabs.github.io/SPADE/).
+View demo videos on the authors' [project page](https://nvlabs.github.io/SPADE/).
+
+View an interactive demo on [my page](https://elvisyjlin.github.io/SpatiallyAdaptiveNormalization/demo).
 
 > SPADE from scratch
 
@@ -60,16 +62,75 @@ Prepare the data as follows
 ```
 
 
-## Usage
+## Usage: Model
+
+Train a model on the training set of a given dataset
 
 ```bash
-python3 train.py --dataset COCO-Stuff --epochs 100 --epochs_decay 0 --gpu
-# python3 train.py --dataset ADE20K --epochs 100 --epochs_decay 100 --gpu
-# python3 train.py --dataset Cityscapes --epochs 100 --epochs_decay 100 --gpu
+python3 train.py --experiment_name spadegan_cocostuff --dataset COCO-Stuff --epochs 100 --epochs_decay 0 --gpu
+# python3 train.py --experiment_name spadegan_ade20k --dataset ADE20K --epochs 100 --epochs_decay 100 --gpu
+# python3 train.py --experiment_name spadegan_cityscapes --dataset Cityscapes --epochs 100 --epochs_decay 100 --gpu
 ```
+
+Generate images from the validation set with a trained model
+
+```bash
+python3 generate.py --experiment_name spadegan_cocostuff --batch_size 32 --gpu
+# python3 generate.py --experiment_name spadegan_ade20k --batch_size 32 --gpu
+# python3 generate.py --experiment_name spadegan_cityscapes --batch_size 32 --gpu
+```
+
+
+## Usage: Demo Site
+
+Install all dependencies for demo site
+
+```bash
+pip3 install -r requirements_demo.txt
+```
+
+Rename `demo/config.js.example` and `server/config.json.example`
+
+```bash
+mv demo/config.js.example demo/config.js
+mv server/config.json.example server/config.json
+```
+
+Specify your IP address and port in `demo/config.js`
+
+```javascript
+const GuaGANHost = 'http://127.0.0.1:[PORT]';
+```
+
+Set the experiement and epoch to load, and also the data path in `server/config.json`
+
+```json
+{
+    "experiment_name": "YOUR EXPERIMENT NAME",
+    "load_epoch": null,
+    "data_root":
+    {
+        "cocostuff": "YOUR COCO-STUFF PATH"
+    }
+}
+```
+
+Preprocess demo datasets
+
+```bash
+python3 -m server.preprocess [DATASET] [DATAPATH] [optional: --num NUM_IMG]
+```
+
+Start the GuaGAN server
+
+```bash
+./demo.sh --port [PORT]
+```
+
+Then you'll be able to see the site on http://localhost:[PORT].
 
 
 ## Interesting Findings
 
 * It fails with small batch sizes. I tried training on a single GPU with a batch size of 8. However, it collapsed in the first dozens of iterations and the output images were full of white color. Training with a batch size of 24 on 4 GPUs seems okay so far.
-* After adding the perceptual loos, my batch size shrinked to 16. Perceptual loss is the most essential one for an adaptive normalized generative adversarial network to learn from scratch.
+* After adding the perceptual loos, my batch size shrinked to 16. Perceptual loss is the most essential one for an adaptive normalized generative adversarial network to learn from scratch. It takes me half a day for an epoch.
