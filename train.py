@@ -73,6 +73,8 @@ def parse():
     parser.add_argument('--experiment_name', type=str, default=datetime.datetime.now().strftime("%Y-%m-%dM%H:%M.%f"))
     parser.add_argument('--gpu', action='store_true')
     parser.add_argument('--multi_gpu', action='store_true')
+    parser.add_argument('--load_epoch', type=int, default=None)
+    parser.add_argument('--load_from_experiment', type=str, default=None)
     return parser.parse_args()
 
 if __name__ == '__main__':
@@ -112,20 +114,16 @@ if __name__ == '__main__':
     vutils.save_image(fixed_annos.float()/n_classes, join(sample_path, '{:03d}_anno.jpg'.format(0)), nrow=4, padding=0)
     
     # Models
-    E = Encoder()
-    E.to(device)
+    E = Encoder().to(device)
     E.apply(init_weights)
     # summary(E, (3, 256, 256), device=device)
-    G = Generator(n_classes)
-    G.to(device)
+    G = Generator(n_classes).to(device)
     G.apply(init_weights)
     # summary(G, [(256,), (10, 256, 256)], device=device)
-    D = Discriminator(n_classes)
-    D.to(device)
+    D = Discriminator(n_classes).to(device)
     D.apply(init_weights)
     # summary(D, (13, 256, 256), device=device)
-    vgg = VGG()
-    vgg.to(device)
+    vgg = VGG().to(device)
     
     if args.multi_gpu:
         E = nn.DataParallel(E)
@@ -138,6 +136,21 @@ if __name__ == '__main__':
     G_opt = optim.Adam(itertools.chain(G.parameters(), E.parameters()), lr=args.lr_G, betas=(args.beta1, args.beta2))
     D_opt = optim.Adam(D.parameters(), lr=args.lr_D, betas=(args.beta1, args.beta2))
     
+    # Load weights from a specific epoch
+    start_ep = 0
+    if args.load_epoch is not None:
+        if args.load_from_experiment is None:
+            load_checkpoint_path = checkpoint_path
+        else:
+            load_checkpoint_path = join('results', args.load_from_experiment, 'checkpoint')
+        load_ep = args.load_epoch
+        start_ep = load_ep + 1
+        E.load_state_dict(torch.load(join(load_checkpoint_path, '{:03}.E.pth'.format(load_ep))))
+        G.load_state_dict(torch.load(join(load_checkpoint_path, '{:03}.G.pth'.format(load_ep))))
+        D.load_state_dict(torch.load(join(load_checkpoint_path, '{:03}.D.pth'.format(load_ep))))
+        G_opt.load_state_dict(torch.load(join(load_checkpoint_path, '{:03}.G_opt.pth'.format(load_ep))))
+        D_opt.load_state_dict(torch.load(join(load_checkpoint_path, '{:03}.D_opt.pth'.format(load_ep))))
+    
     # Criterion
     l1_norm = nn.L1Loss()
     
@@ -145,7 +158,7 @@ if __name__ == '__main__':
     decayed_lr_G = args.lr_G
     decayed_lr_D = args.lr_D
     total_epochs = args.epochs + args.epochs_decay
-    for ep in range(total_epochs):
+    for ep in range(start_ep, total_epochs):
         # Linearly decay learning rates
         if ep >= args.epochs:
             decayed_lr_G = args.lr_G / args.epochs_decay * (total_epochs - ep)

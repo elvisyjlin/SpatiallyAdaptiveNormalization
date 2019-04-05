@@ -6,13 +6,15 @@ View demo videos on the authors' [project page](https://nvlabs.github.io/SPADE/)
 
 View an interactive demo on [my page](http://linux1.csie.ntu.edu.tw:8080/demo). The training on COCO-Stuff has not finished. It is currently at epoch 4 (96 epochs to complete).
 
+![Demo](https://raw.githubusercontent.com/elvisyjlin/SpatiallyAdaptiveNormalization/master/pics/demo.gif)
+
 > SPADE from scratch
 
 I just finished the coding and started training on the datasets mentioned in the paper. The results will be updated in the following days.
 
 Here are some training samples until epoch 4.
 
-![Samples](https://github.com/elvisyjlin/SpatiallyAdaptiveNormalization/blob/master/pics/samples.gif)
+![Samples](https://raw.githubusercontent.com/elvisyjlin/SpatiallyAdaptiveNormalization/master/pics/samples_28.gif)
 
 
 ## SPADE
